@@ -139,6 +139,11 @@
     =================================================================== */
     } else if (isInApp && isiOS) {
 
+      // t=0 — x-safari-https:// scheme
+      // Apple-internal scheme that, when supported, opens Safari with the correct
+      // HTTPS URL directly. No wrong URL, no FTP error page.
+      go('x-safari-https://' + DEST.replace(/^https?:\/\//, ''));
+
       // Step 1: Copy the HTTPS destination to clipboard BEFORE breaking out.
       // On iOS 16+, Safari shows an "Open Copied Link" banner when it detects
       // a URL in the clipboard — so when ftp:// lands the user in Safari at an
