@@ -1,0 +1,35 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": []
+  }
+}
+
+/*
+  -----------------------------------------------------------------------
+  WHY THIS FILE EXISTS (but is mostly empty for your use case)
+  -----------------------------------------------------------------------
+
+  Apple Universal Links work like this:
+    - You list your OWN app's bundle ID here
+    - When a user taps a link to your domain, iOS checks this file
+    - If the app bundle ID matches an installed app, iOS opens the APP
+      instead of Safari — completely bypassing in-app browsers
+
+  The problem: You don't own the Fansly app. You can't list
+  com.fansly.app here because Apple verifies that you control
+  the app's signing certificates (which you don't).
+
+  What Fansly does on their end:
+    - fansly.com has its own apple-app-site-association
+    - So if a user has the Fansly app installed AND taps a fansly.com
+      link in Safari, iOS opens the app directly
+    - Your bridge page routes to fansly.com, and Fansly's own
+      Universal Link handling takes over from there
+
+  In short: leave this file empty/minimal. The value here is that
+  Netlify will serve it at https://yourdomain.com/.well-known/apple-app-site-association
+  if you ever need it for your own app in the future.
+
+  -----------------------------------------------------------------------
+*/

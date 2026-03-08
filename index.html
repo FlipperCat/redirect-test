@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!--
+    LAYER 1: Meta Refresh
+    The most primitive redirect. Zero-delay. Fires before JS even parses.
+    Last resort for ancient browsers or JS-disabled environments.
+  -->
+  <meta http-equiv="refresh" content="0;url=https://fansly.com/sunako_cosplay/posts">
+  <title>One moment...</title>
+  <style>
+    /* Black screen — no UI, no branding, just speed */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      background: #000;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    /*
+      The fallback link is invisible for the first 2 seconds.
+      If every redirect method fails (very rare), it fades in
+      so the user still has a way to get where they're going.
+    */
+    #tap {
+      color: #ffffff;
+      font-size: 17px;
+      font-weight: 500;
+      text-decoration: none;
+      letter-spacing: 0.02em;
+      opacity: 0;
+      animation: appear 0.4s ease 2.2s forwards;
+      padding: 16px 32px;
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 50px;
+    }
+    @keyframes appear { to { opacity: 1; } }
+  </style>
+</head>
+<body>
+
+  <!-- LAYER 4 FALLBACK: Only visible if all JS redirects fail (~2 second delay) -->
+  <a id="tap" href="https://fansly.com/sunako_cosplay/posts">Tap here to continue</a>
+
+  <script>
+  /* =====================================================================
+     GHOST BRIDGE — Deep Link Breakout Script
+     Target destination: https://fansly.com/sunako_cosplay/posts
+     Priority platform: Instagram (also handles TikTok, Twitter/X, Facebook)
+
+     LAYER 2: JavaScript redirect (main engine)
+     LAYER 3: Platform-specific in-app browser breakout attempts
+  ===================================================================== */
+  (function () {
+
+    var DEST = 'https://fansly.com/sunako_cosplay/posts';
+    var ua   = navigator.userAgent || navigator.vendor || window.opera || '';
+
+    /* --- Platform detection --- */
+    var isAndroid = /Android/i.test(ua);
+    var isiOS     = /iPhone|iPad|iPod/i.test(ua);
+
+    // Covers: Instagram, Facebook, TikTok/ByteDance, Twitter/X, Snapchat, LinkedIn
+    var isInApp = /Instagram|FBAN|FBAV|FBIOS|BytedanceWebview|ByteLocale|musical\.ly|TikTok|Twitter|twttr|Snapchat|LinkedInApp/i.test(ua);
+
+    /* --- Helper: attempt a location change, silently eat errors --- */
+    function go(url) {
+      try { window.location.replace(url); } catch (e) { /* silent */ }
+    }
+
+    /* --- Update the visible fallback link --- */
+    var link = document.getElementById('tap');
+    if (link) link.href = DEST;
+
+    /* =================================================================
+       ANDROID IN-APP BROWSER BREAKOUT
+       ===================================================================
+       The Chrome Intent URI is the gold-standard for Android.
+       It tells Android to hand this URL directly to Chrome.
+
+       Anatomy of the intent URI:
+         intent://<host+path>
+         #Intent;
+           scheme=https;                          ← use HTTPS when Chrome opens
+           package=com.android.chrome;            ← target Chrome specifically
+           S.browser_fallback_url=<encoded-url>;  ← if Chrome isn't found, go here
+         end
+
+       This fires, Android OS handles it, Chrome opens, Instagram/TikTok stays
+       in the background. User is now fully outside the in-app browser.
+    ================================================================= */
+    if (isInApp && isAndroid) {
+
+      var intentUrl =
+        'intent://' +
+        DEST.replace(/^https?:\/\//, '') +           // strip scheme for intent body
+        '#Intent' +
+        ';scheme=https' +
+        ';package=com.android.chrome' +
+        ';S.browser_fallback_url=' + encodeURIComponent(DEST) +
+        ';end';
+
+      go(intentUrl);
+
+      // Belt-and-suspenders: plain redirect fires 1.5s later in case
+      // Chrome intent was somehow intercepted before handling.
+      setTimeout(function () { go(DEST); }, 1500);
+
+    /* =================================================================
+       iOS IN-APP BROWSER BREAKOUT
+       ===================================================================
+       Reality check: Instagram's iOS WKWebView is a hard sandbox.
+       There is NO fully reliable method to force Safari open from it —
+       Apple and Meta have both patched the old tricks.
+
+       What we try, in order:
+
+       1. window.open() into a blank tab — some older IG versions let
+          this spawn outside the webview.
+
+       2. googlechrome:// scheme — if the user has Chrome installed,
+          this opens Chrome instead of staying in IG.
+
+       3. googlechrome-x-callback:// — alternate Chrome iOS scheme.
+
+       4. Direct location.replace() — at minimum the user lands on
+          the destination (still inside IAB, but at the right page).
+          Fansly itself may then trigger its own app deep link if installed.
+
+       The practical outcome: Android = near-100% breakout.
+                              iOS = best effort, lands on destination.
+    ================================================================= */
+    } else if (isInApp && isiOS) {
+
+      // Attempt 1: open new window (works on some older IG versions)
+      try {
+        var w = window.open(DEST, '_blank');
+        // If the popup was blocked, w is null — fall through
+        if (!w) throw new Error('popup blocked');
+      } catch (err) { /* fall through */ }
+
+      // Attempt 2: Chrome for iOS (only helps if user has Chrome)
+      setTimeout(function () {
+        go('googlechrome-x-callback://x-callback-url/open?url=' + encodeURIComponent(DEST));
+      }, 150);
+
+      setTimeout(function () {
+        go(DEST.replace(/^https?:\/\//, 'googlechrome://'));
+      }, 350);
+
+      // Attempt 3: plain redirect — user lands on destination regardless
+      setTimeout(function () { go(DEST); }, 700);
+
+    /* =================================================================
+       STANDARD REDIRECT
+       For users on real Safari, Chrome, Firefox, or desktop —
+       just get them there immediately, no tricks needed.
+    ================================================================= */
+    } else {
+      go(DEST);
+    }
+
+  })();
+  </script>
+
+</body>
+</html>
