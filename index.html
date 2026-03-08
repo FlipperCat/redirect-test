@@ -139,32 +139,61 @@
     =================================================================== */
     } else if (isInApp && isiOS) {
 
-      // t=0 — data: URI with embedded meta-refresh
-      setTimeout(function () {
-        var dataPage =
-          '<html><head>' +
-          '<meta http-equiv="refresh" content="0;url=' + DEST + '">' +
-          '</head><body></body></html>';
-        go('data:text/html,' + encodeURIComponent(dataPage));
-      }, 200);
+      // Step 1: Copy the HTTPS destination to clipboard BEFORE breaking out.
+      // On iOS 16+, Safari shows an "Open Copied Link" banner when it detects
+      // a URL in the clipboard — so when ftp:// lands the user in Safari at an
+      // error page, they'll see a one-tap banner to open the correct URL.
+      //
+      // We try two methods in order:
+      //   a) navigator.clipboard.writeText() — modern API, may need permission
+      //   b) document.execCommand('copy')    — legacy API, works in more WKWebView
+      //      contexts without an explicit user gesture
+      function copyToClipboard(text) {
+        // Method A: modern Clipboard API
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).catch(function () {
+            legacyCopy(text);
+          });
+        } else {
+          legacyCopy(text);
+        }
+      }
 
-      // t=500ms — blob: URL with redirect HTML
-      setTimeout(function () {
+      function legacyCopy(text) {
+        // Method B: legacy execCommand — creates an off-screen textarea,
+        // selects it, and copies. Works in many WKWebView configs without
+        // a user gesture requirement.
         try {
-          var html = '<html><head><meta http-equiv="refresh" content="0;url=' + DEST + '"></head><body></body></html>';
-          var blob = new Blob([html], { type: 'text/html' });
-          var blobUrl = URL.createObjectURL(blob);
-          go(blobUrl);
-        } catch (e) { /* Blob not supported — skip */ }
-      }, 500);
+          var ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;';
+          document.body.appendChild(ta);
+          ta.focus();
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+        } catch (e) { /* silent fail */ }
+      }
 
-      // t=900ms — Chrome for iOS (only fires if Chrome is installed)
+      // Copy URL first, then immediately fire the ftp:// breakout.
+      // Order matters: clipboard must be set before Safari opens.
+      copyToClipboard(DEST);
+
+      // Step 2: ftp:// fires — Instagram WKWebView can't handle it,
+      // passes to OS, OS opens Safari. Safari lands on an FTP error page
+      // but detects the HTTPS URL in clipboard and shows "Open Copied Link" banner.
+      setTimeout(function () {
+        go('ftp://' + DEST.replace(/^https?:\/\//, ''));
+      }, 100);
+
+      // Step 3: Chrome for iOS fallback (fires if ftp:// didn't escape,
+      // or for users who have Chrome installed — opens Chrome directly).
       setTimeout(function () {
         go(DEST.replace(/^https?:\/\//, 'googlechrome://'));
-      }, 900);
+      }, 800);
 
-      // t=1300ms — plain redirect (guaranteed destination, may trigger Universal Links → Fansly app)
-      setTimeout(function () { go(DEST); }, 1300);
+      // Step 4: plain redirect — guaranteed destination at minimum.
+      setTimeout(function () { go(DEST); }, 1400);
 
     /* ===================================================================
        STANDARD REDIRECT
