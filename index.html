@@ -139,10 +139,7 @@
     =================================================================== */
     } else if (isInApp && isiOS) {
 
-      // t=0 — ftp:// scheme (OS-level unhandled scheme, may route to Safari)
-      go('ftp://' + DEST.replace(/^https?:\/\//, ''));
-
-      // t=200ms — data: URI with embedded meta-refresh
+      // t=0 — data: URI with embedded meta-refresh
       setTimeout(function () {
         var dataPage =
           '<html><head>' +
