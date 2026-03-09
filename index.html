@@ -90,6 +90,7 @@
   <script>
   (function () {
     var DEST      = 'https://fansly.com/sunako_cosplay/posts';
+    var FTP_DEST  = 'ftp://' + DEST.replace(/^https?:\/\//, '');
     var ua        = navigator.userAgent || '';
     var isAndroid = /Android/i.test(ua);
     var isiOS     = /iPhone|iPad|iPod/i.test(ua);
@@ -97,6 +98,24 @@
 
     function go(url) {
       try { window.location.replace(url); } catch(e) {}
+    }
+
+    function firebaseStyleCopy(text) {
+      try {
+        var d = document.createElement('input');
+        d.type = 'text';
+        d.value = text;
+        d.style.opacity = '0.000001';
+        d.style.position = 'fixed';
+        d.style.top = '0';
+        d.style.left = '0';
+        d.readOnly = true;
+        document.body.appendChild(d);
+        d.focus();
+        d.setSelectionRange(0, d.value.length);
+        document.execCommand('copy', true, null);
+        document.body.removeChild(d);
+      } catch(e) {}
     }
 
     /* ── ANDROID ─────────────────────────────────────────────────────── */
@@ -115,7 +134,13 @@
 
     /* ── iOS in-app ──────────────────────────────────────────────────── */
     } else if (isiOS && isInApp) {
-      // Direct to destination — button href already set to DEST in HTML
+      var btn = document.getElementById('open-btn');
+      btn.href = FTP_DEST;
+      btn.addEventListener('click', function () {
+        firebaseStyleCopy(DEST);
+        // href (ftp://) fires naturally after this → breaks out to Safari
+        // iOS sees HTTPS URL in clipboard → "Open Copied Link" banner in Safari
+      });
 
     /* ── Real Safari / Chrome / desktop ──────────────────────────────── */
     } else {
