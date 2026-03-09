@@ -135,12 +135,9 @@
 
     /* ── iOS in-app ──────────────────────────────────────────────────── */
     } else if (isiOS && isInApp) {
-      var btn = document.getElementById('open-btn');
-      btn.href = DEST; // fallback if JS fails
-      btn.addEventListener('click', function (e) {
-        e.preventDefault();
-        go(SAFARI_DEST); // x-safari-https:// via window.location.replace, not via href
-      });
+      // Open Fansly directly — loads in Instagram's in-app browser.
+      // User can then use Instagram's ··· menu → "Open in Safari" if desired.
+      go(DEST);
 
     /* ── Real Safari / Chrome / desktop ──────────────────────────────── */
     } else {
