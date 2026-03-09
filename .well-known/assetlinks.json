@@ -3,36 +3,8 @@
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "PLACEHOLDER_YOUR_APP_PACKAGE",
-      "sha256_cert_fingerprints": [
-        "PLACEHOLDER_YOUR_SIGNING_CERT_SHA256"
-      ]
+      "package_name": "com.fansly.fansly",
+      "sha256_cert_fingerprints": []
     }
   }
 ]
-
-/*
-  -----------------------------------------------------------------------
-  WHY THIS FILE EXISTS (placeholder only)
-  -----------------------------------------------------------------------
-
-  Android App Links work the same way as Apple Universal Links:
-    - You list YOUR OWN app's package name and signing certificate
-    - Google Play verifies you control both the domain AND the app
-    - Verified links open your app directly, bypassing Chrome IAB
-
-  Same limitation applies: You cannot claim the Fansly app
-  (com.fansly.android or similar) because you don't hold the
-  signing keys for it.
-
-  The Android Intent URI in index.html is a more practical tool
-  for your use case — it forces Chrome open without requiring
-  any app ownership.
-
-  If you ever build your own companion app, replace the placeholders
-  above with your real package name and SHA-256 fingerprint.
-
-  To get your SHA-256 fingerprint from a keystore:
-    keytool -list -v -keystore your-keystore.jks
-  -----------------------------------------------------------------------
-*/

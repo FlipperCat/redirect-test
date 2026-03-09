@@ -1,17 +1,25 @@
-# Netlify configuration for Ghost Bridge redirect page
-
 [build]
   publish = "."
 
-# Disable all caching on the redirect page.
-# Without this, Netlify's CDN will cache the HTML and your link
-# updates will take hours to propagate — defeating the purpose.
+# Serve AASA without .json extension as application/json
+# Required by Apple — wrong Content-Type causes iOS to reject the file silently
+[[headers]]
+  for = "/.well-known/apple-app-site-association"
+  [headers.values]
+    Content-Type  = "application/json"
+    Cache-Control = "no-store, no-cache, must-revalidate, max-age=0"
+
+# Serve Android assetlinks
+[[headers]]
+  for = "/.well-known/assetlinks.json"
+  [headers.values]
+    Content-Type  = "application/json"
+    Cache-Control = "no-store, no-cache, must-revalidate, max-age=0"
+
+# No-cache everything else — redirect changes take effect instantly
 [[headers]]
   for = "/*"
   [headers.values]
-    Cache-Control      = "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
-    Pragma             = "no-cache"
-    Expires            = "0"
-    X-Frame-Options    = "DENY"
-    X-Content-Type-Options = "nosniff"
-    Referrer-Policy    = "no-referrer"
+    Cache-Control = "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
+    Pragma        = "no-cache"
+    Expires       = "0"
