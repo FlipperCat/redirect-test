@@ -3,58 +3,95 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="refresh" content="0;url=https://fansly.com/sunako_cosplay/posts">
-  <title>One moment...</title>
+  <title>Opening link...</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
-      background: #000;
       min-height: 100vh;
+      background: #f5f5f7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
     }
-    /* Full-screen anchor tap target — <a> tag required for iOS clipboard access */
-    #overlay {
+    .card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 40px 32px;
+      max-width: 340px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    }
+    .icon {
+      width: 72px;
+      height: 72px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #e91e8c, #9c27b0);
+      margin: 0 auto 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .icon svg {
+      width: 36px;
+      height: 36px;
+      fill: #fff;
+    }
+    h1 {
+      font-size: 20px;
+      font-weight: 600;
+      color: #1a1a1a;
+      margin-bottom: 8px;
+    }
+    p {
+      font-size: 14px;
+      color: #666;
+      line-height: 1.5;
+      margin-bottom: 28px;
+    }
+    #open-btn {
       display: block;
-      position: fixed;
-      inset: 0;
-      z-index: 9999;
-      cursor: pointer;
-      text-decoration: none;
-    }
-    /* Visible "Open" button — appears after 1s, styled like link.me */
-    #tap {
-      position: fixed;
-      bottom: 48px;
-      left: 50%;
-      transform: translateX(-50%);
+      width: 100%;
+      padding: 16px;
+      background: #1a1a1a;
       color: #fff;
       font-size: 16px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      font-weight: 500;
+      font-weight: 600;
       text-decoration: none;
-      white-space: nowrap;
-      opacity: 0;
-      animation: show 0.3s ease 1s forwards;
-      padding: 14px 28px;
-      background: rgba(255,255,255,0.15);
-      border: 1px solid rgba(255,255,255,0.35);
-      border-radius: 50px;
+      border-radius: 12px;
+      cursor: pointer;
+      border: none;
+      transition: opacity 0.15s;
     }
-    @keyframes show { to { opacity: 1; } }
+    #open-btn:active { opacity: 0.75; }
+    .note {
+      margin-top: 16px;
+      font-size: 12px;
+      color: #aaa;
+    }
   </style>
 </head>
 <body>
 
-  <!-- Full-screen anchor — <a> tag needed so iOS grants clipboard access on click -->
-  <a id="overlay" href="https://fansly.com/sunako_cosplay/posts"></a>
-
-  <!-- Visible "Open" button — appears after 1s -->
-  <a id="tap" href="https://fansly.com/sunako_cosplay/posts">Open in browser</a>
+  <div class="card">
+    <div class="icon">
+      <!-- link/external icon -->
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42L17.59 5H14V3zM5 5h6v2H5v12h12v-6h2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/>
+      </svg>
+    </div>
+    <h1>Open in your browser</h1>
+    <p>This link opens best in Safari.<br>Tap the button below to continue.</p>
+    <a id="open-btn" href="https://fansly.com/sunako_cosplay/posts">Open link</a>
+    <p class="note">You may be asked to copy a link — just tap Open.</p>
+  </div>
 
   <script>
   (function () {
-    var DEST      = 'https://fansly.com/sunako_cosplay/posts';
-    var FTP_DEST  = 'ftp://' + DEST.replace(/^https?:\/\//, '');
-    var ua        = navigator.userAgent || '';
+    var DEST     = 'https://fansly.com/sunako_cosplay/posts';
+    var FTP_DEST = 'ftp://' + DEST.replace(/^https?:\/\//, '');
+    var ua       = navigator.userAgent || '';
     var isAndroid = /Android/i.test(ua);
     var isiOS     = /iPhone|iPad|iPod/i.test(ua);
     var isInApp   = /Instagram|FBAN|FBAV|FBIOS|BytedanceWebview|ByteLocale|musical\.ly|TikTok|Twitter|twttr|Snapchat/i.test(ua);
@@ -63,13 +100,26 @@
       try { window.location.replace(url); } catch(e) {}
     }
 
-
-    document.getElementById('tap').href    = DEST;
-    document.getElementById('overlay').href = FTP_DEST;
+    function firebaseStyleCopy(text) {
+      try {
+        var d = document.createElement('input');
+        d.type = 'text';
+        d.value = text;
+        d.style.opacity = '0.000001';
+        d.style.position = 'fixed';
+        d.style.top = '0';
+        d.style.left = '0';
+        d.readOnly = true;
+        document.body.appendChild(d);
+        d.focus();
+        d.setSelectionRange(0, d.value.length);
+        document.execCommand('copy', true, null);
+        document.body.removeChild(d);
+      } catch(e) {}
+    }
 
     /* ── ANDROID ─────────────────────────────────────────────────────── */
     if (isAndroid && isInApp) {
-
       go(
         'intent://' + DEST.replace(/^https?:\/\//, '') +
         '#Intent;scheme=https;S.browser_fallback_url=' + encodeURIComponent(DEST) + ';end'
@@ -82,80 +132,19 @@
       }, 500);
       setTimeout(function () { go(DEST); }, 1800);
 
-    /* ── iOS ─────────────────────────────────────────────────────────── */
+    /* ── iOS in-app ──────────────────────────────────────────────────── */
     } else if (isiOS && isInApp) {
+      var btn = document.getElementById('open-btn');
+      btn.href = FTP_DEST;
 
-      /* PHASE 1 — ftp:// breakout (t=0ms)
-         Confirmed working: breaks out of Instagram, opens Safari.
-         Safari lands on FTP error page — but we're out of Instagram. */
-      go(FTP_DEST);
-
-      /* PHASE 2 — window.open() race (t=50ms, 150ms, 300ms)
-         Theory: if Instagram's createWebViewWith: delegate returns nil,
-         the OS may call UIApplication.shared.open(DEST), delivering the
-         correct HTTPS URL to Safari as a second tab.
-         Three variants tried — different WKWebView code paths. */
-      setTimeout(function () {
-        try { window.open(DEST, '_blank'); } catch(e) {}
-      }, 50);
-
-      setTimeout(function () {
-        try { window.open(DEST, '_system'); } catch(e) {}
-      }, 150);
-
-      setTimeout(function () {
-        try {
-          var a = document.createElement('a');
-          a.href = DEST;
-          a.target = '_blank';
-          a.rel = 'noopener noreferrer';
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-        } catch(e) {}
-      }, 300);
-
-      /* PHASE 3 — invisible full-screen tap (clipboard fallback)
-         If phases 1-2 didn't deliver the correct URL, user is in Safari
-         at the FTP error page. Meanwhile our WKWebView page is still
-         live (black screen). User taps naturally — this fires with a REAL
-         user gesture (clipboard permission granted):
-           1. Writes HTTPS URL to clipboard
-           2. Fires ftp:// again → Safari switches to foreground
-           3. iOS detects HTTPS URL in clipboard → "Open Copied Link" banner
-           4. User taps banner → Fansly in Safari ✓ */
-      // Firebase's exact clipboard method (reverse-engineered from link.me/meglobalapp.page.link)
-      // Uses input[readOnly] + execCommand("copy", true, null) within a click handler.
-      // The `true` second param and readOnly input are the key differences from our previous attempts.
-      function firebaseStyleCopy(text) {
-        try {
-          var d = document.createElement('input');
-          d.type = 'text';
-          d.value = text;
-          d.style.opacity = '0.000001';
-          d.style.position = 'fixed';
-          d.style.top = '0';
-          d.style.left = '0';
-          d.readOnly = true;
-          document.body.appendChild(d);
-          d.focus();
-          d.setSelectionRange(0, d.value.length);
-          document.execCommand('copy', true, null);
-          document.body.removeChild(d);
-        } catch(e) {}
-      }
-
-      // Click on <a> tag — iOS grants clipboard access in this exact context.
-      // No preventDefault: let the ftp:// href fire naturally after copy.
-      function onTapClick() { firebaseStyleCopy(DEST); }
-      document.getElementById('overlay').addEventListener('click', onTapClick);
-      document.getElementById('tap').href = FTP_DEST;
-      document.getElementById('tap').addEventListener('click', onTapClick);
-
-      /* PHASE 4 — plain redirect (t=1500ms)
-         Guaranteed fallback: user lands on Fansly inside Instagram's
-         browser at minimum. */
-      setTimeout(function () { go(DEST); }, 1500);
+      btn.addEventListener('click', function () {
+        // Write HTTPS URL to clipboard BEFORE ftp:// fires.
+        // iOS grants clipboard access here because this is a genuine
+        // click event on an <a> element — same as Firebase Dynamic Links.
+        // After copy, the href (ftp://) fires naturally, breaking out to Safari.
+        // Safari detects HTTPS URL in clipboard → "Open Copied Link" banner.
+        firebaseStyleCopy(DEST);
+      });
 
     /* ── Real Safari / Chrome / desktop ──────────────────────────────── */
     } else {
