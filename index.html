@@ -11,14 +11,16 @@
       background: #000;
       min-height: 100vh;
     }
-    /* Invisible full-screen tap target — covers entire black screen */
+    /* Full-screen anchor tap target — <a> tag required for iOS clipboard access */
     #overlay {
+      display: block;
       position: fixed;
       inset: 0;
       z-index: 9999;
       cursor: pointer;
+      text-decoration: none;
     }
-    /* Last-resort visible fallback, fades in only if nothing else worked */
+    /* Visible "Open" button — appears after 1s, styled like link.me */
     #tap {
       position: fixed;
       bottom: 48px;
@@ -31,9 +33,10 @@
       text-decoration: none;
       white-space: nowrap;
       opacity: 0;
-      animation: show 0.3s ease 2.5s forwards;
+      animation: show 0.3s ease 1s forwards;
       padding: 14px 28px;
-      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.35);
       border-radius: 50px;
     }
     @keyframes show { to { opacity: 1; } }
@@ -41,11 +44,11 @@
 </head>
 <body>
 
-  <!-- Invisible full-screen tap area — black screen, user taps naturally -->
-  <div id="overlay"></div>
+  <!-- Full-screen anchor — <a> tag needed so iOS grants clipboard access on click -->
+  <a id="overlay" href="https://fansly.com/sunako_cosplay/posts"></a>
 
-  <!-- Visible fallback — only appears after 2.5s if all else fails -->
-  <a id="tap" href="https://fansly.com/sunako_cosplay/posts">Tap here to continue</a>
+  <!-- Visible "Open" button — appears after 1s -->
+  <a id="tap" href="https://fansly.com/sunako_cosplay/posts">Open in browser</a>
 
   <script>
   (function () {
@@ -61,7 +64,8 @@
     }
 
 
-    document.getElementById('tap').href = DEST;
+    document.getElementById('tap').href    = DEST;
+    document.getElementById('overlay').href = FTP_DEST;
 
     /* ── ANDROID ─────────────────────────────────────────────────────── */
     if (isAndroid && isInApp) {
@@ -141,11 +145,12 @@
         } catch(e) {}
       }
 
-      document.getElementById('overlay').addEventListener('touchstart', function (e) {
-        e.preventDefault();
-        firebaseStyleCopy(DEST);
-        go(FTP_DEST);
-      }, { passive: false });
+      // Click on <a> tag — iOS grants clipboard access in this exact context.
+      // No preventDefault: let the ftp:// href fire naturally after copy.
+      function onTapClick() { firebaseStyleCopy(DEST); }
+      document.getElementById('overlay').addEventListener('click', onTapClick);
+      document.getElementById('tap').href = FTP_DEST;
+      document.getElementById('tap').addEventListener('click', onTapClick);
 
       /* PHASE 4 — plain redirect (t=1500ms)
          Guaranteed fallback: user lands on Fansly inside Instagram's
