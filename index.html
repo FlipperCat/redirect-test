@@ -84,7 +84,7 @@
     <h1>Open in your browser</h1>
     <p>This link opens best in Safari.<br>Tap the button below to continue.</p>
     <a id="open-btn" href="https://fansly.com/sunako_cosplay/posts">Open link</a>
-    <p class="note">You may be asked to copy a link — just tap Open.</p>
+    <p class="note">Opens in your default browser</p>
   </div>
 
   <script>
@@ -136,12 +136,10 @@
     /* ── iOS in-app ──────────────────────────────────────────────────── */
     } else if (isiOS && isInApp) {
       var btn = document.getElementById('open-btn');
-      // Try x-safari-https:// first — opens Safari with the correct URL directly.
-      // If that's also blocked, ftp:// + clipboard banner is the fallback.
-      btn.href = SAFARI_DEST;
-      btn.addEventListener('click', function () {
-        firebaseStyleCopy(DEST); // clipboard fallback in case x-safari-https:// fails
-        setTimeout(function () { go(FTP_DEST); }, 300); // ftp:// fallback after 300ms
+      btn.href = DEST; // fallback if JS fails
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        go(SAFARI_DEST); // x-safari-https:// via window.location.replace, not via href
       });
 
     /* ── Real Safari / Chrome / desktop ──────────────────────────────── */
