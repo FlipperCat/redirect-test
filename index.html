@@ -89,8 +89,9 @@
 
   <script>
   (function () {
-    var DEST      = 'https://fansly.com/sunako_cosplay/posts';
-    var FTP_DEST  = 'ftp://' + DEST.replace(/^https?:\/\//, '');
+    var DEST         = 'https://fansly.com/sunako_cosplay/posts';
+    var SAFARI_DEST  = 'x-safari-https://' + DEST.replace(/^https?:\/\//, '');
+    var FTP_DEST     = 'ftp://'            + DEST.replace(/^https?:\/\//, '');
     var ua        = navigator.userAgent || '';
     var isAndroid = /Android/i.test(ua);
     var isiOS     = /iPhone|iPad|iPod/i.test(ua);
@@ -135,11 +136,12 @@
     /* ── iOS in-app ──────────────────────────────────────────────────── */
     } else if (isiOS && isInApp) {
       var btn = document.getElementById('open-btn');
-      btn.href = FTP_DEST;
+      // Try x-safari-https:// first — opens Safari with the correct URL directly.
+      // If that's also blocked, ftp:// + clipboard banner is the fallback.
+      btn.href = SAFARI_DEST;
       btn.addEventListener('click', function () {
-        firebaseStyleCopy(DEST);
-        // href (ftp://) fires naturally after this → breaks out to Safari
-        // iOS sees HTTPS URL in clipboard → "Open Copied Link" banner in Safari
+        firebaseStyleCopy(DEST); // clipboard fallback in case x-safari-https:// fails
+        setTimeout(function () { go(FTP_DEST); }, 300); // ftp:// fallback after 300ms
       });
 
     /* ── Real Safari / Chrome / desktop ──────────────────────────────── */
