@@ -89,33 +89,14 @@
 
   <script>
   (function () {
-    var DEST     = 'https://fansly.com/sunako_cosplay/posts';
-    var FTP_DEST = 'ftp://' + DEST.replace(/^https?:\/\//, '');
-    var ua       = navigator.userAgent || '';
+    var DEST      = 'https://fansly.com/sunako_cosplay/posts';
+    var ua        = navigator.userAgent || '';
     var isAndroid = /Android/i.test(ua);
     var isiOS     = /iPhone|iPad|iPod/i.test(ua);
     var isInApp   = /Instagram|FBAN|FBAV|FBIOS|BytedanceWebview|ByteLocale|musical\.ly|TikTok|Twitter|twttr|Snapchat/i.test(ua);
 
     function go(url) {
       try { window.location.replace(url); } catch(e) {}
-    }
-
-    function firebaseStyleCopy(text) {
-      try {
-        var d = document.createElement('input');
-        d.type = 'text';
-        d.value = text;
-        d.style.opacity = '0.000001';
-        d.style.position = 'fixed';
-        d.style.top = '0';
-        d.style.left = '0';
-        d.readOnly = true;
-        document.body.appendChild(d);
-        d.focus();
-        d.setSelectionRange(0, d.value.length);
-        document.execCommand('copy', true, null);
-        document.body.removeChild(d);
-      } catch(e) {}
     }
 
     /* ── ANDROID ─────────────────────────────────────────────────────── */
@@ -134,17 +115,7 @@
 
     /* ── iOS in-app ──────────────────────────────────────────────────── */
     } else if (isiOS && isInApp) {
-      var btn = document.getElementById('open-btn');
-      btn.href = FTP_DEST;
-
-      btn.addEventListener('click', function () {
-        // Write HTTPS URL to clipboard BEFORE ftp:// fires.
-        // iOS grants clipboard access here because this is a genuine
-        // click event on an <a> element — same as Firebase Dynamic Links.
-        // After copy, the href (ftp://) fires naturally, breaking out to Safari.
-        // Safari detects HTTPS URL in clipboard → "Open Copied Link" banner.
-        firebaseStyleCopy(DEST);
-      });
+      // Direct to destination — button href already set to DEST in HTML
 
     /* ── Real Safari / Chrome / desktop ──────────────────────────────── */
     } else {
