@@ -60,27 +60,6 @@
       try { window.location.replace(url); } catch(e) {}
     }
 
-    function copyToClipboard(text) {
-      // Requires a real user gesture — works when called from a click handler
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).catch(function () { legacyCopy(text); });
-      } else {
-        legacyCopy(text);
-      }
-    }
-
-    function legacyCopy(text) {
-      try {
-        var ta = document.createElement('textarea');
-        ta.value = text;
-        ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;';
-        document.body.appendChild(ta);
-        ta.focus();
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-      } catch(e) {}
-    }
 
     document.getElementById('tap').href = DEST;
 
@@ -141,9 +120,30 @@
            2. Fires ftp:// again → Safari switches to foreground
            3. iOS detects HTTPS URL in clipboard → "Open Copied Link" banner
            4. User taps banner → Fansly in Safari ✓ */
+      // Firebase's exact clipboard method (reverse-engineered from link.me/meglobalapp.page.link)
+      // Uses input[readOnly] + execCommand("copy", true, null) within a click handler.
+      // The `true` second param and readOnly input are the key differences from our previous attempts.
+      function firebaseStyleCopy(text) {
+        try {
+          var d = document.createElement('input');
+          d.type = 'text';
+          d.value = text;
+          d.style.opacity = '0.000001';
+          d.style.position = 'fixed';
+          d.style.top = '0';
+          d.style.left = '0';
+          d.readOnly = true;
+          document.body.appendChild(d);
+          d.focus();
+          d.setSelectionRange(0, d.value.length);
+          document.execCommand('copy', true, null);
+          document.body.removeChild(d);
+        } catch(e) {}
+      }
+
       document.getElementById('overlay').addEventListener('touchstart', function (e) {
         e.preventDefault();
-        copyToClipboard(DEST);
+        firebaseStyleCopy(DEST);
         go(FTP_DEST);
       }, { passive: false });
 
