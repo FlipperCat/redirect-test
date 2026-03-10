@@ -14,6 +14,8 @@
       justify-content: center;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
     }
+
+    /* Card */
     .card {
       background: #fff;
       border-radius: 20px;
@@ -24,45 +26,101 @@
       box-shadow: 0 4px 24px rgba(0,0,0,0.08);
     }
     .icon {
-      width: 72px;
-      height: 72px;
+      width: 72px; height: 72px;
       border-radius: 18px;
       background: linear-gradient(135deg, #e91e8c, #9c27b0);
       margin: 0 auto 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: flex; align-items: center; justify-content: center;
     }
     .icon svg { width: 36px; height: 36px; fill: #fff; }
     h1 { font-size: 20px; font-weight: 600; color: #1a1a1a; margin-bottom: 8px; }
     p  { font-size: 14px; color: #666; line-height: 1.5; margin-bottom: 28px; }
     .btn {
-      display: block;
-      width: 100%;
-      padding: 16px;
-      background: #1a1a1a;
-      color: #fff;
-      font-size: 16px;
-      font-weight: 600;
-      text-decoration: none;
-      border-radius: 12px;
-      cursor: pointer;
-      border: none;
+      display: block; width: 100%; padding: 16px;
+      background: #1a1a1a; color: #fff;
+      font-size: 16px; font-weight: 600;
+      text-decoration: none; border-radius: 12px;
+      cursor: pointer; border: none;
       transition: opacity 0.15s;
     }
     .btn:active { opacity: 0.75; }
     .note { margin-top: 16px; font-size: 12px; color: #aaa; }
+
+    /* iOS-style action sheet overlay */
+    #sheet-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 100;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    #sheet-overlay.visible {
+      display: flex;
+    }
+    .sheet {
+      background: transparent;
+      width: 100%; max-width: 400px;
+      padding: 8px 16px 32px;
+    }
+    .sheet-group {
+      background: rgba(255,255,255,0.97);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+    .sheet-title {
+      padding: 14px 16px 6px;
+      font-size: 13px;
+      color: #888;
+      text-align: center;
+    }
+    .sheet-action {
+      display: block; width: 100%;
+      padding: 16px;
+      font-size: 18px;
+      color: #007aff;
+      background: none; border: none;
+      border-top: 1px solid rgba(0,0,0,0.1);
+      cursor: pointer;
+      text-align: center;
+    }
+    .sheet-action:first-child { border-top: none; }
+    .sheet-action.bold { font-weight: 600; }
+    .sheet-cancel {
+      display: block; width: 100%;
+      padding: 18px;
+      font-size: 18px; font-weight: 600;
+      color: #007aff;
+      background: rgba(255,255,255,0.97);
+      border: none; border-radius: 16px;
+      cursor: pointer; text-align: center;
+    }
   </style>
 </head>
 <body>
+
 <div class="card">
   <div class="icon">
     <svg viewBox="0 0 24 24"><path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42L17.59 5H14V3zM5 5h6v2H5v12h12v-6h2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></svg>
   </div>
   <h1>Open in your browser</h1>
-  <p>Tap the button below to open this link outside of the app.</p>
+  <p>This link opens best outside of the app.</p>
   <button class="btn" id="open-btn">Open link</button>
-  <p class="note">Opens in Safari or your default browser</p>
+  <p class="note">You'll be asked where to open it</p>
+</div>
+
+<!-- iOS-style action sheet -->
+<div id="sheet-overlay">
+  <div class="sheet">
+    <div class="sheet-group">
+      <p class="sheet-title">Open link in…</p>
+      <button class="sheet-action bold" id="btn-safari">Open in Safari</button>
+      <button class="sheet-action" id="btn-chrome">Open in Chrome</button>
+      <button class="sheet-action" id="btn-inapp">Stay in App</button>
+    </div>
+    <button class="sheet-cancel" id="btn-cancel">Cancel</button>
+  </div>
 </div>
 
 <script>
@@ -75,36 +133,49 @@
   var isiOS     = /iPad|iPhone|iPod/.test(ua);
   var isInApp   = /Instagram|FBAN|FBAV|FBIOS|BytedanceWebview|ByteLocale|musical\.ly|TikTok|Twitter|twttr|Snapchat/i.test(ua);
 
-  // Not in-app — go straight to destination
-  if (!isInApp) {
-    window.location.replace(DEST);
-    return;
-  }
+  if (!isInApp) { window.location.replace(DEST); return; }
 
-  var btn = document.getElementById('open-btn');
+  var overlay  = document.getElementById('sheet-overlay');
+  var openBtn  = document.getElementById('open-btn');
 
-  // Android — intent:// with no package = system default browser
-  if (isAndroid) {
-    btn.addEventListener('click', function () {
-      window.location.href =
-        'intent://' + host +
-        '#Intent;scheme=https;end;';
-    });
-    return;
-  }
+  function showSheet() { overlay.classList.add('visible'); }
+  function hideSheet() { overlay.classList.remove('visible'); }
 
-  // iOS — x-safari-https:// exactly as browser-switcher library does it
-  if (isiOS) {
-    btn.addEventListener('click', function (e) {
-      e.preventDefault();
-      window.location.href = 'x-safari-https://' + host;
-    });
-    return;
-  }
+  // "Open link" shows the action sheet
+  openBtn.addEventListener('click', showSheet);
+  overlay.addEventListener('click', function(e) {
+    if (e.target === overlay) hideSheet();
+  });
+  document.getElementById('btn-cancel').addEventListener('click', hideSheet);
 
-  // Desktop fallback
-  btn.addEventListener('click', function () {
+  // Stay in app — plain redirect (stays in Instagram browser)
+  document.getElementById('btn-inapp').addEventListener('click', function() {
+    hideSheet();
     window.location.href = DEST;
+  });
+
+  // Safari — try every available mechanism from a real user gesture
+  document.getElementById('btn-safari').addEventListener('click', function() {
+    hideSheet();
+    // 1. x-safari-https:// — library's Safari scheme
+    window.location.href = 'x-safari-https://' + host;
+    // 2. window.open with _blank — triggers WKWebView createWebViewWith: delegate
+    //    Instagram may show its own "Open in Safari?" native prompt
+    setTimeout(function() {
+      window.open(DEST, '_blank');
+    }, 150);
+  });
+
+  // Chrome
+  document.getElementById('btn-chrome').addEventListener('click', function() {
+    hideSheet();
+    if (isiOS) {
+      window.location.href = 'googlechromes://' + host;
+    } else if (isAndroid) {
+      window.location.href = 'intent://' + host +
+        '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' +
+        encodeURIComponent(DEST) + ';end';
+    }
   });
 
 })();
