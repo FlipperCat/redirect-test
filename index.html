@@ -159,26 +159,8 @@
       }
     }
 
-    // Fallback button: attempt again via library on manual tap
-    btn.addEventListener('click', function (e) {
-      e.preventDefault();
-      var lib = (typeof BrowserSwitcher !== 'undefined')
-        ? (BrowserSwitcher.default || BrowserSwitcher)
-        : null;
-
-      if (lib) {
-        try {
-          lib.open({ targetUrl: DEST, browser: 'chrome', platform: 'auto' });
-          return;
-        } catch (err) {}
-        try {
-          lib.open({ targetUrl: DEST, browser: 'safari', platform: 'auto' });
-          return;
-        } catch (err) {}
-      }
-      // Last resort
-      window.location.replace(DEST);
-    });
+    // Fallback button: plain navigation, no JS — always works
+    btn.href = DEST;
 
     tryRedirect();
   })();
