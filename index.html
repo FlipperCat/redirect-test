@@ -50,8 +50,8 @@
       line-height: 1.5;
       margin-bottom: 28px;
     }
-    #open-btn {
-      display: block;
+    #fallback-btn {
+      display: none;
       width: 100%;
       padding: 16px;
       background: #1a1a1a;
@@ -64,86 +64,123 @@
       border: none;
       transition: opacity 0.15s;
     }
-    #open-btn:active { opacity: 0.75; }
+    #fallback-btn:active { opacity: 0.75; }
     .note {
       margin-top: 16px;
       font-size: 12px;
       color: #aaa;
     }
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid #eee;
+      border-top-color: #1a1a1a;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 20px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
 
   <div class="card">
     <div class="icon">
-      <!-- link/external icon -->
       <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
         <path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42L17.59 5H14V3zM5 5h6v2H5v12h12v-6h2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/>
       </svg>
     </div>
-    <h1>Open in your browser</h1>
-    <p>This link opens best in Safari.<br>Tap the button below to continue.</p>
-    <a id="open-btn" href="https://fansly.com/sunako_cosplay/posts">Open link</a>
-    <p class="note">Opens in your default browser</p>
+    <h1>Opening your browser...</h1>
+    <p>Redirecting you to the link.<br>This only takes a moment.</p>
+    <div class="spinner" id="spinner"></div>
+    <a id="fallback-btn" href="https://fansly.com/sunako_cosplay/posts">Open link manually</a>
+    <p class="note" id="note"></p>
   </div>
 
+  <script src="https://unpkg.com/browser-switcher/dist/index.min.js"></script>
   <script>
   (function () {
-    var DEST         = 'https://fansly.com/sunako_cosplay/posts';
-    var SAFARI_DEST  = 'x-safari-https://' + DEST.replace(/^https?:\/\//, '');
-    var FTP_DEST     = 'ftp://'            + DEST.replace(/^https?:\/\//, '');
-    var ua        = navigator.userAgent || '';
-    var isAndroid = /Android/i.test(ua);
-    var isiOS     = /iPhone|iPad|iPod/i.test(ua);
-    var isInApp   = /Instagram|FBAN|FBAV|FBIOS|BytedanceWebview|ByteLocale|musical\.ly|TikTok|Twitter|twttr|Snapchat/i.test(ua);
+    var DEST = 'https://fansly.com/sunako_cosplay/posts';
 
-    function go(url) {
-      try { window.location.replace(url); } catch(e) {}
-    }
+    var btn     = document.getElementById('fallback-btn');
+    var spinner = document.getElementById('spinner');
+    var note    = document.getElementById('note');
 
-    function firebaseStyleCopy(text) {
+    // Show fallback button after 2 seconds if auto-redirect hasn't worked
+    var fallbackTimer = setTimeout(function () {
+      spinner.style.display = 'none';
+      btn.style.display = 'block';
+      note.textContent = 'Auto-redirect failed. Tap the button above.';
+    }, 2000);
+
+    function tryRedirect() {
+      // Resolve the API — script tag exposes BrowserSwitcher or BrowserSwitcher.default
+      var lib = (typeof BrowserSwitcher !== 'undefined')
+        ? (BrowserSwitcher.default || BrowserSwitcher)
+        : null;
+
+      if (!lib) {
+        // Library failed to load — fall back immediately
+        clearTimeout(fallbackTimer);
+        spinner.style.display = 'none';
+        btn.style.display = 'block';
+        return;
+      }
+
+      var isInApp = lib.isInAppBrowser ? lib.isInAppBrowser() : false;
+
+      if (!isInApp) {
+        // Not in an in-app browser — redirect directly
+        clearTimeout(fallbackTimer);
+        window.location.replace(DEST);
+        return;
+      }
+
+      var platform = lib.detectPlatform ? lib.detectPlatform() : 'unknown';
+
       try {
-        var d = document.createElement('input');
-        d.type = 'text';
-        d.value = text;
-        d.style.opacity = '0.000001';
-        d.style.position = 'fixed';
-        d.style.top = '0';
-        d.style.left = '0';
-        d.readOnly = true;
-        document.body.appendChild(d);
-        d.focus();
-        d.setSelectionRange(0, d.value.length);
-        document.execCommand('copy', true, null);
-        document.body.removeChild(d);
-      } catch(e) {}
+        if (platform === 'ios') {
+          // Try Chrome first (correct URL if installed), then Safari
+          try {
+            lib.open({ targetUrl: DEST, browser: 'chrome', platform: 'ios' });
+          } catch (e) {}
+          setTimeout(function () {
+            try {
+              lib.open({ targetUrl: DEST, browser: 'safari', platform: 'ios' });
+            } catch (e) {}
+          }, 400);
+        } else if (platform === 'android') {
+          lib.open({ targetUrl: DEST, browser: 'chrome', platform: 'android' });
+        } else {
+          window.location.replace(DEST);
+        }
+      } catch (err) {
+        // All attempts failed — fallback button already showing after 2s
+      }
     }
 
-    /* ── ANDROID ─────────────────────────────────────────────────────── */
-    if (isAndroid && isInApp) {
-      go(
-        'intent://' + DEST.replace(/^https?:\/\//, '') +
-        '#Intent;scheme=https;S.browser_fallback_url=' + encodeURIComponent(DEST) + ';end'
-      );
-      setTimeout(function () {
-        go(
-          'intent://' + DEST.replace(/^https?:\/\//, '') +
-          '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent(DEST) + ';end'
-        );
-      }, 500);
-      setTimeout(function () { go(DEST); }, 1800);
+    // Fallback button: attempt again via library on manual tap
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      var lib = (typeof BrowserSwitcher !== 'undefined')
+        ? (BrowserSwitcher.default || BrowserSwitcher)
+        : null;
 
-    /* ── iOS in-app ──────────────────────────────────────────────────── */
-    } else if (isiOS && isInApp) {
-      // Open Fansly directly — loads in Instagram's in-app browser.
-      // User can then use Instagram's ··· menu → "Open in Safari" if desired.
-      go(DEST);
+      if (lib) {
+        try {
+          lib.open({ targetUrl: DEST, browser: 'chrome', platform: 'auto' });
+          return;
+        } catch (err) {}
+        try {
+          lib.open({ targetUrl: DEST, browser: 'safari', platform: 'auto' });
+          return;
+        } catch (err) {}
+      }
+      // Last resort
+      window.location.replace(DEST);
+    });
 
-    /* ── Real Safari / Chrome / desktop ──────────────────────────────── */
-    } else {
-      go(DEST);
-    }
-
+    tryRedirect();
   })();
   </script>
 
