@@ -101,14 +101,16 @@
   var isiOS     = /iPhone|iPad|iPod/i.test(ua);
   var isInApp   = /Instagram|FBAN|FBAV|FBIOS|BytedanceWebview|ByteLocale|musical\.ly|TikTok|Twitter|twttr|Snapchat/i.test(ua);
 
-  // iOS schemes — replicated directly from browser-switcher source
+  // iOS schemes — exact match from browser-switcher dist/index.min.js
   var schemes = {
-    chrome:  'googlechromes://' + host,
-    firefox: 'firefox://open-url?url=' + encodeURIComponent(DEST),
-    edge:    'microsoft-edge-https://' + host,
-    brave:   'brave://' + host,
-    opera:   'opera-https://' + host,
-    ddg:     'ddgQuickLink://' + host
+    chrome:   'googlechromes://'              + host,
+    firefox:  'firefox://open-url?url=https://' + host,
+    brave:    'brave://open-url?url=https://'   + host,
+    edge:     'microsoft-edge-https://'       + host,
+    opera:    'touch-https://'                + host,
+    operagx:  'opera-gx://open-url?url=https://' + host,
+    ddg:      'ddgQuickLink://'              + host,
+    safari:   'x-safari-https://'            + host
   };
 
   // Android intent — replicated from browser-switcher source
@@ -117,7 +119,7 @@
   }
 
   function go(url) {
-    try { window.location.href = url; } catch(e) {}
+    try { window.location.href = url; } catch(e) {} // matches library 'href' method
   }
 
   function showManual() {
@@ -131,16 +133,16 @@
   document.getElementById('btn-direct').href = DEST;
 
   document.getElementById('btn-chrome').addEventListener('click', function() {
-    go(isiOS ? schemes.chrome : androidIntent('com.android.chrome'));
+    go(isiOS ? schemes.chrome  : androidIntent('com.android.chrome'));
   });
   document.getElementById('btn-firefox').addEventListener('click', function() {
     go(isiOS ? schemes.firefox : androidIntent('org.mozilla.firefox'));
   });
   document.getElementById('btn-edge').addEventListener('click', function() {
-    go(isiOS ? schemes.edge : androidIntent('com.microsoft.emmx'));
+    go(isiOS ? schemes.edge    : androidIntent('com.microsoft.emmx'));
   });
   document.getElementById('btn-brave').addEventListener('click', function() {
-    go(isiOS ? schemes.brave : androidIntent('com.brave.browser'));
+    go(isiOS ? schemes.brave   : androidIntent('com.brave.browser'));
   });
 
   // ── Not in-app: redirect straight to destination ───────────────────
@@ -170,11 +172,13 @@
     });
 
     var attempts = [
+      schemes.safari,   // x-safari-https:// first — library default for iOS
       schemes.chrome,
       schemes.firefox,
-      schemes.edge,
       schemes.brave,
+      schemes.edge,
       schemes.opera,
+      schemes.operagx,
       schemes.ddg
     ];
 
