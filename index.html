@@ -33,25 +33,11 @@
       align-items: center;
       justify-content: center;
     }
-    .icon svg {
-      width: 36px;
-      height: 36px;
-      fill: #fff;
-    }
-    h1 {
-      font-size: 20px;
-      font-weight: 600;
-      color: #1a1a1a;
-      margin-bottom: 8px;
-    }
-    p {
-      font-size: 14px;
-      color: #666;
-      line-height: 1.5;
-      margin-bottom: 28px;
-    }
-    #fallback-btn {
-      display: none;
+    .icon svg { width: 36px; height: 36px; fill: #fff; }
+    h1 { font-size: 20px; font-weight: 600; color: #1a1a1a; margin-bottom: 8px; }
+    p  { font-size: 14px; color: #666; line-height: 1.5; margin-bottom: 24px; }
+    .btn {
+      display: block;
       width: 100%;
       padding: 16px;
       background: #1a1a1a;
@@ -62,17 +48,18 @@
       border-radius: 12px;
       cursor: pointer;
       border: none;
+      margin-bottom: 10px;
       transition: opacity 0.15s;
     }
-    #fallback-btn:active { opacity: 0.75; }
-    .note {
-      margin-top: 16px;
-      font-size: 12px;
-      color: #aaa;
+    .btn:active { opacity: 0.75; }
+    .btn.secondary {
+      background: transparent;
+      color: #1a1a1a;
+      border: 1px solid #ddd;
     }
+    .note { margin-top: 12px; font-size: 12px; color: #aaa; }
     .spinner {
-      width: 32px;
-      height: 32px;
+      width: 32px; height: 32px;
       border: 3px solid #eee;
       border-top-color: #1a1a1a;
       border-radius: 50%;
@@ -80,91 +67,141 @@
       margin: 0 auto 20px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
-
-  <div class="card">
-    <div class="icon">
-      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42L17.59 5H14V3zM5 5h6v2H5v12h12v-6h2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/>
-      </svg>
-    </div>
-    <h1>Opening your browser...</h1>
-    <p>Redirecting you to the link.<br>This only takes a moment.</p>
-    <div class="spinner" id="spinner"></div>
-    <a id="fallback-btn" href="https://fansly.com/sunako_cosplay/posts">Open link manually</a>
-    <p class="note" id="note"></p>
+<div class="card">
+  <div class="icon">
+    <svg viewBox="0 0 24 24"><path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42L17.59 5H14V3zM5 5h6v2H5v12h12v-6h2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></svg>
   </div>
+  <h1 id="title">Opening your browser…</h1>
+  <p  id="subtitle">Trying to redirect you automatically.</p>
 
-  <script src="https://unpkg.com/browser-switcher/dist/index.min.js"></script>
-  <script>
-  (function () {
-    var DEST = 'https://fansly.com/sunako_cosplay/posts';
+  <div class="spinner" id="spinner"></div>
 
-    var btn     = document.getElementById('fallback-btn');
-    var spinner = document.getElementById('spinner');
-    var note    = document.getElementById('note');
+  <!-- shown after auto-attempt fails -->
+  <div id="manual" class="hidden">
+    <button class="btn" id="btn-chrome">Open in Chrome</button>
+    <button class="btn" id="btn-firefox">Open in Firefox</button>
+    <button class="btn" id="btn-edge">Open in Edge</button>
+    <button class="btn" id="btn-brave">Open in Brave</button>
+    <a    class="btn secondary" id="btn-direct" href="#">Open in browser</a>
+    <p class="note">Tap the button for your browser above.</p>
+  </div>
+</div>
 
-    // Show fallback button after 2 seconds if auto-redirect hasn't worked
-    var fallbackTimer = setTimeout(function () {
-      spinner.style.display = 'none';
-      btn.style.display = 'block';
-      note.textContent = 'Auto-redirect failed. Tap the button above.';
-    }, 2000);
+<script>
+(function () {
+  var DEST = 'https://fansly.com/sunako_cosplay/posts';
+  var host = DEST.replace(/^https?:\/\//, ''); // fansly.com/sunako_cosplay/posts
 
-    function tryRedirect() {
-      // Resolve the API — script tag exposes BrowserSwitcher or BrowserSwitcher.default
-      var lib = (typeof BrowserSwitcher !== 'undefined')
-        ? (BrowserSwitcher.default || BrowserSwitcher)
-        : null;
+  var ua        = navigator.userAgent || '';
+  var isAndroid = /Android/i.test(ua);
+  var isiOS     = /iPhone|iPad|iPod/i.test(ua);
+  var isInApp   = /Instagram|FBAN|FBAV|FBIOS|BytedanceWebview|ByteLocale|musical\.ly|TikTok|Twitter|twttr|Snapchat/i.test(ua);
 
-      if (!lib) {
-        // Library failed to load — fall back immediately
-        clearTimeout(fallbackTimer);
-        spinner.style.display = 'none';
-        btn.style.display = 'block';
-        return;
-      }
+  // iOS schemes — replicated directly from browser-switcher source
+  var schemes = {
+    chrome:  'googlechromes://' + host,
+    firefox: 'firefox://open-url?url=' + encodeURIComponent(DEST),
+    edge:    'microsoft-edge-https://' + host,
+    brave:   'brave://' + host,
+    opera:   'opera-https://' + host,
+    ddg:     'ddgQuickLink://' + host
+  };
 
-      var isInApp = lib.isInAppBrowser ? lib.isInAppBrowser() : false;
+  // Android intent — replicated from browser-switcher source
+  function androidIntent(pkg) {
+    return 'intent://' + host + '#Intent;scheme=https;package=' + pkg + ';S.browser_fallback_url=' + encodeURIComponent(DEST) + ';end';
+  }
 
-      if (!isInApp) {
-        // Not in an in-app browser — redirect directly
-        clearTimeout(fallbackTimer);
-        window.location.replace(DEST);
-        return;
-      }
+  function go(url) {
+    try { window.location.href = url; } catch(e) {}
+  }
 
-      var platform = lib.detectPlatform ? lib.detectPlatform() : 'unknown';
+  function showManual() {
+    document.getElementById('spinner').classList.add('hidden');
+    document.getElementById('title').textContent = 'Open in your browser';
+    document.getElementById('subtitle').textContent = 'Auto-redirect failed. Choose your browser below.';
+    document.getElementById('manual').classList.remove('hidden');
+  }
 
-      try {
-        if (platform === 'ios') {
-          // Try Chrome first (correct URL if installed), then Safari
-          try {
-            lib.open({ targetUrl: DEST, browser: 'chrome', platform: 'ios' });
-          } catch (e) {}
-          setTimeout(function () {
-            try {
-              lib.open({ targetUrl: DEST, browser: 'safari', platform: 'ios' });
-            } catch (e) {}
-          }, 400);
-        } else if (platform === 'android') {
-          lib.open({ targetUrl: DEST, browser: 'chrome', platform: 'android' });
-        } else {
-          window.location.replace(DEST);
-        }
-      } catch (err) {
-        // All attempts failed — fallback button already showing after 2s
-      }
+  // Wire up manual buttons
+  document.getElementById('btn-direct').href = DEST;
+
+  document.getElementById('btn-chrome').addEventListener('click', function() {
+    go(isiOS ? schemes.chrome : androidIntent('com.android.chrome'));
+  });
+  document.getElementById('btn-firefox').addEventListener('click', function() {
+    go(isiOS ? schemes.firefox : androidIntent('org.mozilla.firefox'));
+  });
+  document.getElementById('btn-edge').addEventListener('click', function() {
+    go(isiOS ? schemes.edge : androidIntent('com.microsoft.emmx'));
+  });
+  document.getElementById('btn-brave').addEventListener('click', function() {
+    go(isiOS ? schemes.brave : androidIntent('com.brave.browser'));
+  });
+
+  // ── Not in-app: redirect straight to destination ───────────────────
+  if (!isInApp) {
+    window.location.replace(DEST);
+    return;
+  }
+
+  // ── Android in-app ─────────────────────────────────────────────────
+  if (isAndroid) {
+    go(androidIntent('com.android.chrome'));
+    setTimeout(function() { go(androidIntent('com.android.browser')); }, 600);
+    setTimeout(function() { window.location.replace(DEST); }, 1500);
+    setTimeout(showManual, 2000);
+    return;
+  }
+
+  // ── iOS in-app ─────────────────────────────────────────────────────
+  // Cascade through every browser scheme. visibilitychange fires the
+  // moment any scheme successfully hands off to an installed app —
+  // we use that to cancel remaining attempts.
+  if (isiOS) {
+    var done = false;
+
+    document.addEventListener('visibilitychange', function() {
+      if (document.hidden) done = true;
+    });
+
+    var attempts = [
+      schemes.chrome,
+      schemes.firefox,
+      schemes.edge,
+      schemes.brave,
+      schemes.opera,
+      schemes.ddg
+    ];
+
+    // Fire first attempt immediately
+    go(attempts[0]);
+
+    // Queue remaining attempts 500ms apart
+    for (var i = 1; i < attempts.length; i++) {
+      (function(scheme, delay) {
+        setTimeout(function() {
+          if (!done) go(scheme);
+        }, delay);
+      })(attempts[i], i * 500);
     }
 
-    // Fallback button: plain navigation, no JS — always works
-    btn.href = DEST;
+    // After all schemes tried, show manual buttons
+    setTimeout(function() {
+      if (!done) showManual();
+    }, attempts.length * 500 + 300);
 
-    tryRedirect();
-  })();
-  </script>
+    return;
+  }
 
+  // ── Fallback (desktop etc) ─────────────────────────────────────────
+  window.location.replace(DEST);
+
+})();
+</script>
 </body>
 </html>
